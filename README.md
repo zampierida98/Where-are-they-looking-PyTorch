@@ -4,29 +4,48 @@ This repository contains an implementation of the "Where are they looking?" pape
 
 ## Introduction
 
-A deep neural network-based approach for gaze-following automated using a SSD face detector.
+A deep neural network-based approach for gaze-following automated using a SFD face detector.
 
 ## Installation
 
-- [Pytorch 1.1 & Torchvision](https://pytorch.org/)
+* [CUDA and Pytorch](https://stackoverflow.com/a/70509457)
+* Additional libraries: debug :) or `pip install -r requirements.txt`
 
-## Usage
+## Training
 
-* First, download pretrained Places365 AlexNet model: https://urlzs.com/ytKK3
+* First, download [pretrained Places365 AlexNet model](https://urlzs.com/ytKK3) and [GazeFollow Data](http://gazefollow.csail.mit.edu/download.html).
 
-* Then run: python3 main.py --data_dir=`location to gazefollow dataset` --placesmodelpath=`location to places365 alexnet model`
+* Then run:
+    ```
+    python main.py --data_dir=../GazeFollowing/GazeFollowData/ --batch-size=64 --workers=8 --epochs=1 --verbose=True --printfreq=1
+    ```
 
+* Please check out `opts.py` for other parameter changing.
 
-* Please check out opts.py for other parameter changing.
+## Testing
 
-## Contact
+* Adjust `checkpoint` variable in `modeltester.py` if you have your own saved model.
 
-Please do get in touch with us by email for any questions, comments, suggestions you have!
+* Run:
+    ```
+    python modeltester.py --data_dir=../GazeFollowing/GazeFollowData/ --batch-size=64 --workers=8
+    ```
 
-* rohit.gajawada@gmail.com
-* haard.panchal@students.iiit.ac.in
+## Inference on images
+
+* First, download [s3fd_convert.7z](https://github.com/clcarwin/SFD_pytorch/releases/tag/v0.1) and extract the content to `../s3fd_convert.pth`.
+
+* Place input images in `imgs`.
+
+* Run:
+    ```
+    python modeltester_withssd.py
+    ```
+
+* Output images are in `outputs/imgs`.
 
 ## References
 
 * sfzhang15's SFD detector is used for face detection (https://github.com/sfzhang15/SFD).
 * Link to the NIPS 2015 paper from MIT: http://people.csail.mit.edu/khosla/papers/nips2015_recasens.pdf. Please cite them if you decide to use this project for your research.
+* Original implementation (https://github.com/rohitgajawada/Where-are-they-looking-PyTorch).

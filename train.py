@@ -114,13 +114,12 @@ class Validator():
 
                 if i % opt.printfreq == 0 and opt.verbose:
                     print('Epoch: [{0}][{1}/{2}]\t'
-                            'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                            'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                            'Dist {dist.avg:.3f}\t'
-                            'MinDist {mindist.avg:.3f}\t'
-                            .format(
-                            epoch, i, len(valloader), batch_time=self.batch_time,
-                            data_time= self.data_time, dist=self.dist, mindist=self.mindist))
+                          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                          'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                          'Dist {dist.avg:.3f}\t'
+                          'MinDist {mindist.avg:.3f}\t'.format(
+                           epoch, i, len(valloader), batch_time=self.batch_time,
+                           data_time= self.data_time, dist=self.dist, mindist=self.mindist))
 
                 sys.stdout.flush()
 
@@ -129,10 +128,11 @@ class Validator():
             self.writer.add_scalar('Val Min Dist', self.mindist.avg, epoch)
 
             print('Val: [{0}]\t'
-                    'Time {batch_time.sum:.3f}\t'
-                    'Data {data_time.sum:.3f}\t'
-                    'Dist {dist.avg:.3f}\t' 'MinDist {mindist.avg:.3f}\t'.format(
-                    epoch, batch_time=self.batch_time,
-                    data_time= self.data_time, dist=self.dist, mindist=self.mindist))
+                  'Time {batch_time.sum:.3f}\t'
+                  'Data {data_time.sum:.3f}\t'
+                  'Dist {dist.avg:.3f}\t'
+                  'MinDist {mindist.avg:.3f}\t'.format(
+                   epoch, batch_time=self.batch_time,
+                   data_time= self.data_time, dist=self.dist, mindist=self.mindist))
 
         return self.dist.avg

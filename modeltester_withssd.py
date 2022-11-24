@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
-import datasets.getdata as ld
+import getdata as ld
 import utils
 import os
 import opts
@@ -22,106 +22,110 @@ import cv2
 
 sys.path.append('./sfd')
 
-parser = opts.myargparser()
+parser = opts.optionargparser()
 opt = parser.parse_args()
 
-checkpoint = torch.load('./savedmodels/gazenet_gazefollow_28epoch.pth.tar')
-# checkpoint = torch.load('./savedmodels/adamodels/gazenet_gazefollow_99epoch.pth.tar')
+def main():
+    checkpoint = torch.load('./savedmodels/gazenet_gazefollow_highcrop_Hope_0epoch.pth.tar')
 
-print("Loading our pretrained gazenet model: ")
-start_epoch = checkpoint['epoch']
-best_err = checkpoint['best_prec1']
+    print("Loading our pretrained gazenet model: ")
+    start_epoch = checkpoint['epoch']
+    best_err = checkpoint['best_err']
 
-model = gazenet.Net(opt).cuda()
-model.load_state_dict(checkpoint['state_dict'])
-
-
-imglist = glob.glob('imgs/test/*')
-c = 0
-for imname in imglist:
-
-    im = io.imread(imname)
-    faces, eye_coords, eyes = facedetect.getFaces(im)
-
-    normtransform = transforms.Compose([
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-
-    untr = transforms.Compose([
-            transforms.Normalize([0, 0, 0], [1/(0.229), 1/(0.224), 1/(0.225)])])
-    untr2 = transforms.Compose([
-            transforms.Normalize([-0.485, -0.456, -0.406], [1, 1, 1])])
-
-    im = np.ascontiguousarray(im)
-    im = transform.resize(im,(227, 227))
-    im = im.transpose((2, 0, 1))
-    img = torch.from_numpy(im).contiguous()
-    img = img.float()
-    img = normtransform(img)
-    img = img.view(1, 3, 227, 227)
-
-    try:
-        num = faces.size(0)
-    except:
-        continue
-    imgs = torch.FloatTensor()
-    for i in range(num):
-        imgs = torch.cat((imgs, img))
-        faces[i] = normtransform(faces[i])
-
-    xis = faces
+    model = gazenet.Net(opt).cuda()
+    model.load_state_dict(checkpoint['state_dict'])
 
 
-    imgs = Variable(imgs.cuda())
-    xis = Variable(faces.cuda())
-    eye_coords = Variable(eye_coords.cuda())
-    eye_coords = eye_coords.view(-1, 13, 13)
+    imglist = glob.glob('imgs/*')
+    c = 0
+    for imname in imglist:
 
-    print(imgs)
-    print(xis)
-    print(eye_coords)
+        im = io.imread(imname)
+        faces, eye_coords, eyes = facedetect.getFaces(im)
 
-    outputs = model(imgs, xis, eye_coords)
+        normtransform = transforms.Compose([
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
 
-    for i in range(num):
+        untr = transforms.Compose([
+                transforms.Normalize([0, 0, 0], [1/(0.229), 1/(0.224), 1/(0.225)])])
+        untr2 = transforms.Compose([
+                transforms.Normalize([-0.485, -0.456, -0.406], [1, 1, 1])])
 
-        img = untr(imgs[i].data.contiguous().cpu())
-        img2 = untr(xis[i].data.contiguous().cpu())
+        im = np.ascontiguousarray(im)
+        im = transform.resize(im,(227, 227))
+        im = im.transpose((2, 0, 1))
+        img = torch.from_numpy(im).contiguous()
+        img = img.float()
+        img = normtransform(img)
+        img = img.view(1, 3, 227, 227)
 
-        img = untr2(img)
-        img2 = untr2(img2)
+        try:
+            num = faces.size(0)
+        except:
+            continue
+        imgs = torch.FloatTensor()
+        for i in range(num):
+            imgs = torch.cat((imgs, img))
+            faces[i] = normtransform(faces[i])
 
-        eye = eye_coords[i].view(1, 169)
+        xis = faces
 
-        pred = outputs[i].data.view(1, 169)
 
-        ind = pred.max(1)[1]
-        step = 1 / 26.0
-        y = ((float(ind[0]/ 13.0)) / 13.0) + step
-        x = ((float(ind[0] % 13.0)) / 13.0) + step
+        imgs = Variable(imgs.cuda())
+        xis = Variable(faces.cuda())
+        eye_coords = Variable(eye_coords.cuda())
+        eye_coords = eye_coords.view(-1, 13, 13)
 
-        to_pil = torchvision.transforms.ToPILImage()
-        im = to_pil(img.float())
-        im2 = to_pil(img2.float())
+        print(imgs)
+        print(xis)
+        print(eye_coords)
 
-        eye_np = eyes[i]
+        outputs = model(imgs, xis, eye_coords)
 
-        # print(eye_np)
-        # print(x * 227, y * 227)
+        for i in range(num):
 
-        # plt.subplot(131)
-        plt.plot([x* 227, eye_np[0]* 227],[y* 227, eye_np[1]* 227])
+            img = untr(imgs[i].data.contiguous().cpu())
+            img2 = untr(xis[i].data.contiguous().cpu())
 
-        # plt.subplot(133)
-        # plt.imshow(im2)
-        # plt.subplot(132)
-        # plt.imshow(eye_coords[i].data.cpu().numpy())
+            img = untr2(img)
+            img2 = untr2(img2)
 
-    c += 1
-    im = np.array(im)
-    # cv2.imwrite('./output_' + str(c) + '.jpg', im)
-    plt.imshow(im)
-    # plt.imsave('output_' + str(c) + '.jpg', im)
+            eye = eye_coords[i].view(1, 169)
 
-    plt.savefig('imgs/test/output_' + str(c) + '.jpg', bbox_inches='tight', pad_inches=0)
-    plt.show()
+            pred = outputs[i].data.view(1, 25)
+
+            ind = pred.max(1)[1]
+            step = 1 / 26.0
+            y = ((float(ind[0]/ 13.0)) / 13.0) + step
+            x = ((float(ind[0] % 13.0)) / 13.0) + step
+
+            to_pil = torchvision.transforms.ToPILImage()
+            im = to_pil(img.float())
+            im2 = to_pil(img2.float())
+
+            eye_np = eyes[i]
+
+            # print(eye_np)
+            # print(x * 227, y * 227)
+
+            # plt.subplot(131)
+            plt.plot([x* 227, eye_np[0]* 227],[y* 227, eye_np[1]* 227])
+            print([x* 227, eye_np[0]* 227],[y* 227, eye_np[1]* 227])
+
+            # plt.subplot(133)
+            # plt.imshow(im2)
+            # plt.subplot(132)
+            # plt.imshow(eye_coords[i].data.cpu().numpy())
+
+        c += 1
+        im = np.array(im)
+        # cv2.imwrite('./output_' + str(c) + '.jpg', im)
+        plt.imshow(im)
+        # plt.imsave('output_' + str(c) + '.jpg', im)
+
+        plt.savefig('outputs/' + imname, bbox_inches='tight', pad_inches=0)
+        plt.show()
+
+if __name__ == '__main__':
+    main()

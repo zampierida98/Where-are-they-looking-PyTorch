@@ -6,9 +6,9 @@ torch.backends.cudnn.bencmark = True
 import cv2
 import argparse
 import numpy as np
-import net_s3fd
+from . import net_s3fd
 from skimage import io, transform
-from bbox import *
+from . import bbox
 import matplotlib.pyplot as plt
 import torchvision
 
@@ -22,8 +22,8 @@ def detect(net,img):
     olist = net(img)
 
     bboxlist = []
-    for i in range(len(olist)/2): olist[i*2] = F.softmax(olist[i*2])
-    for i in range(len(olist)/2):
+    for i in range(int(len(olist)/2)): olist[i*2] = F.softmax(olist[i*2])
+    for i in range(int(len(olist)/2)):
         ocls,oreg = olist[i*2].data.cpu(),olist[i*2+1].data.cpu()
         FB,FC,FH,FW = ocls.size() # feature map size
         stride = 2**(i+2)    # 4,8,16,32,64,128
@@ -36,7 +36,7 @@ def detect(net,img):
             if score<0.05: continue
             priors = torch.Tensor([[axc/1.0,ayc/1.0,stride*4/1.0,stride*4/1.0]])
             variances = [0.1,0.2]
-            box = decode(loc,priors,variances)
+            box = bbox.decode(loc,priors,variances)
             x1,y1,x2,y2 = box[0]*1.0
 
             bboxlist.append([x1,y1,x2,y2,score])
@@ -60,7 +60,7 @@ def getFaces(img):
 
     shp = img.shape
     bboxlist = detect(net,img)
-    keep = nms(bboxlist,0.3)
+    keep = bbox.nms(bboxlist,0.3)
     bboxlist = bboxlist[keep,:]
 
     faces = torch.FloatTensor()
