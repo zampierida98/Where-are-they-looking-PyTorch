@@ -50,7 +50,7 @@ def main():
 
         print(torch.max(outputs[i]))
 
-        heat_in = torch.clamp(outputs[i].data.cpu(), 0, 1).unsqueeze(0)  # TODO
+        heat_in = torch.clamp(outputs[i].data.cpu(), 0, 1).reshape((227,227))
 
         heatmap = to_pil(heat_in)
         plt.imshow(heatmap)
